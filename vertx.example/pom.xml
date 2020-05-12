@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>tyang513.github.io.example</groupId>
@@ -28,7 +28,7 @@
     <vertx.version>3.8.5</vertx.version>
     <junit-jupiter.version>5.4.0</junit-jupiter.version>
 
-    <main.verticle>tyang513.github.io.example.vertx.example.MainVerticle</main.verticle>
+    <main.verticle>example.MainVerticle</main.verticle>
   </properties>
 
   <dependencyManagement>
@@ -123,6 +123,4 @@
       </plugin>
     </plugins>
   </build>
-
-
 </project>
