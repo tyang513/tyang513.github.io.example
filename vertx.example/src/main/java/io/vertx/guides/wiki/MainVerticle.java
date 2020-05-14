@@ -2,7 +2,6 @@ package io.vertx.guides.wiki;
 
 import com.github.rjeschke.txtmark.Processor;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
@@ -34,6 +33,12 @@ public class MainVerticle extends AbstractVerticle {
         "# A new page\n" +
             "\n" +
             "Feel-free to write in Markdown!\n";
+
+    private static final String SQL_GET_PAGE = "select id, content from pages where name = ?";
+    private static final String SQL_CREATE_PAGE = "insert into pages values (?, ?)";
+    private static final String SQL_SAVE_PAGE = "update pages set content = ? where id = ?";
+    private static final String SQL_ALL_PAGES = "select name from pages";
+    private static final String SQL_DELETE_PAGE = "delete from pages where id = ?";
     /**
      * 日志
      */
@@ -72,8 +77,8 @@ public class MainVerticle extends AbstractVerticle {
 
         JsonObject config = new JsonObject();
         config.put("url", "jdbc:mysql://172.23.6.249:3306/yt_test??useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai");
-        config.put("driver_class", "com.mysql.jdbc.Driver");
-        config.put("max_pool_size", "30");
+        config.put("driver_class", "com.mysql.cj.jdbc.Driver");
+        config.put("max_pool_size", 30);
         config.put("username", "rwuser");
         config.put("password", "kw1ntu2p");
 
@@ -87,7 +92,6 @@ public class MainVerticle extends AbstractVerticle {
                 promise.fail(sqlConnectionAsyncResult.cause());
                 return;
             }
-
             // 如果获取连接成功，则执行select 'x' 语句校验是否正常
             SQLConnection connection = sqlConnectionAsyncResult.result();
             connection.execute("select 'x'", executeAsyncResult -> {
@@ -99,6 +103,7 @@ public class MainVerticle extends AbstractVerticle {
                 }
                 promise.complete();
             });
+
         });
         return promise.future();
     }
@@ -152,7 +157,7 @@ public class MainVerticle extends AbstractVerticle {
         jdbcClient.getConnection(sqlConnectionAsyncResult -> {
             if (sqlConnectionAsyncResult.succeeded()) {
                 SQLConnection connection = sqlConnectionAsyncResult.result();
-                connection.queryWithParams("", new JsonArray().add(page), queryResultAsyncResult -> {
+                connection.queryWithParams(SQL_GET_PAGE, new JsonArray().add(page), queryResultAsyncResult -> {
 
                     connection.close();
 
@@ -198,7 +203,7 @@ public class MainVerticle extends AbstractVerticle {
             if (sqlConnectionAsyncResult.succeeded()) {
 
                 SQLConnection connection = sqlConnectionAsyncResult.result();
-                connection.query("select value from tp_cube", queryResultAsyncResult -> {
+                connection.query(SQL_ALL_PAGES, queryResultAsyncResult -> {
                     connection.close();
 
                     if (queryResultAsyncResult.succeeded()) {
@@ -268,17 +273,34 @@ public class MainVerticle extends AbstractVerticle {
 
         jdbcClient.getConnection(sqlConnectionAsyncResult -> {
 
-            if (sqlConnectionAsyncResult.failed()){
+            if (sqlConnectionAsyncResult.failed()) {
                 logger.error("pageUpdateHandler 获取数据连接异常");
                 context.fail(sqlConnectionAsyncResult.cause());
-                return ;
-            }
-            if (sqlConnectionAsyncResult.succeeded()){
-
+                return;
             }
 
+            SQLConnection connection = sqlConnectionAsyncResult.result();
+
+            String sql = newPage ? SQL_CREATE_PAGE : SQL_SAVE_PAGE;
+            JsonArray params = new JsonArray();
+
+            if (newPage) {
+                params.add(title).add(markdown);
+            } else {
+                params.add(markdown).add(id);
+            }
+
+            connection.updateWithParams(sql, params, res -> {
+                connection.close();
+                if (res.succeeded()) {
+                    context.response().setStatusCode(303);
+                    context.response().putHeader("Location", "/wiki/" + title);
+                    context.response().end();
+                } else {
+                    context.fail(res.cause());
+                }
+            });
         });
-
     }
 
 
@@ -288,7 +310,24 @@ public class MainVerticle extends AbstractVerticle {
      * @param context
      */
     private void pageDeletionHandler(RoutingContext context) {
-
+        String id = context.request().getParam("id");
+        jdbcClient.getConnection(car -> {
+            if (car.succeeded()) {
+                SQLConnection connection = car.result();
+                connection.updateWithParams(SQL_DELETE_PAGE, new JsonArray().add(id), res -> {
+                    connection.close();
+                    if (res.succeeded()) {
+                        context.response().setStatusCode(303);
+                        context.response().putHeader("Location", "/");
+                        context.response().end();
+                    } else {
+                        context.fail(res.cause());
+                    }
+                });
+            } else {
+                context.fail(car.cause());
+            }
+        });
     }
 
 }
