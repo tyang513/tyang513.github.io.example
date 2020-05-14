@@ -1,9 +1,12 @@
 package io.vertx.guides.wiki;
 
+import com.github.rjeschke.txtmark.Processor;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.sql.SQLConnection;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,20 +30,22 @@ import java.util.List;
  */
 public class MainVerticle extends AbstractVerticle {
 
+    private static final String EMPTY_PAGE_MARKDOWN =
+        "# A new page\n" +
+            "\n" +
+            "Feel-free to write in Markdown!\n";
     /**
      * 日志
      */
     private static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
-
     /**
      * JDBC 客户端
      */
     private JDBCClient jdbcClient;
-
     /**
      * 模板引擎
      */
-    private FreeMarkerTemplateEngine freeMarkerTemplateEngine;
+    private FreeMarkerTemplateEngine templateEngine;
 
     /**
      * @param promise
@@ -110,13 +116,14 @@ public class MainVerticle extends AbstractVerticle {
 
         Router router = Router.router(vertx);
         router.get("/").handler(this::indexHandler);
+        router.get("/wiki/:page").handler(this::pageRenderingHandler);
 
         router.post().handler(BodyHandler.create());
         router.post("/save").handler(this::pageUpdateHandler);
         router.post("/create").handler(this::pageCreateHandler);
         router.post("/delete").handler(this::pageDeletionHandler);
 
-        freeMarkerTemplateEngine = FreeMarkerTemplateEngine.create(vertx);
+        templateEngine = FreeMarkerTemplateEngine.create(vertx);
 
         httpServer.requestHandler(router).listen(8080, httpServerAsyncResult -> {
 
@@ -133,6 +140,51 @@ public class MainVerticle extends AbstractVerticle {
         });
 
         return promise.future();
+    }
+
+    /**
+     * @param context
+     */
+    private void pageRenderingHandler(RoutingContext context) {
+
+        String page = context.request().getParam("page");
+
+        jdbcClient.getConnection(sqlConnectionAsyncResult -> {
+            if (sqlConnectionAsyncResult.succeeded()) {
+                SQLConnection connection = sqlConnectionAsyncResult.result();
+                connection.queryWithParams("", new JsonArray().add(page), queryResultAsyncResult -> {
+
+                    connection.close();
+
+                    if (queryResultAsyncResult.succeeded()) {
+                        JsonArray row = queryResultAsyncResult.result().getResults().stream()
+                            .findFirst().orElseGet(() -> new JsonArray().add(-1).add(EMPTY_PAGE_MARKDOWN));
+                        Integer id = row.getInteger(0);
+                        String rawContent = row.getString(1);
+
+                        context.put("title", page);
+                        context.put("id", id);
+                        context.put("newPage", queryResultAsyncResult.result().getResults().size() == 0 ? "yes" : "no");
+                        context.put("rawContent", rawContent);
+                        context.put("content", Processor.process(rawContent));
+                        context.put("timestamp", new Date().toString());
+
+                        templateEngine.render(context.data(), "templates/page.ftl", ar -> {
+                            if (ar.succeeded()) {
+                                context.response().putHeader("Content-Type", "text/html");
+                                context.response().end(ar.result());
+                            } else {
+                                context.fail(ar.cause());
+                            }
+                        });
+                    } else {
+                        context.fail(queryResultAsyncResult.cause());
+                    }
+                });
+            } else {
+                context.fail(sqlConnectionAsyncResult.cause());
+            }
+        });
     }
 
     /**
@@ -157,12 +209,21 @@ public class MainVerticle extends AbstractVerticle {
                                 String value = rs.getString("value");
                                 dataList.add(value);
                             }
+
+                            context.put("title", "Wiki home");
+                            context.put("pages", dataList);
+                            templateEngine.render(context.data(), "templates/index.ftl", event -> {
+                                if (event.succeeded()) {
+                                    context.response().putHeader("Content-Type", "text/html");
+                                    context.response().end(event.result());
+                                } else {
+                                    context.fail(event.cause());
+                                }
+                            });
                         } catch (Exception e) {
                             logger.error("查询出错", e);
                             context.fail(e);
                         }
-
-                        
                         return;
                     }
 
@@ -184,7 +245,14 @@ public class MainVerticle extends AbstractVerticle {
      * @param context
      */
     private void pageCreateHandler(RoutingContext context) {
-
+        String pageName = context.request().getParam("name");
+        String location = "/wiki/" + pageName;
+        if (pageName == null || pageName.isEmpty()) {
+            location = "/";
+        }
+        context.response().setStatusCode(303);
+        context.response().putHeader("Location", location);
+        context.response().end();
     }
 
     /**
@@ -193,8 +261,26 @@ public class MainVerticle extends AbstractVerticle {
      * @param context
      */
     private void pageUpdateHandler(RoutingContext context) {
+        String id = context.request().getParam("id");
+        String title = context.request().getParam("title");
+        String markdown = context.request().getParam("markdown");
+        boolean newPage = "yes".equals(context.request().getParam("newPage"));
+
+        jdbcClient.getConnection(sqlConnectionAsyncResult -> {
+
+            if (sqlConnectionAsyncResult.failed()){
+                logger.error("pageUpdateHandler 获取数据连接异常");
+                context.fail(sqlConnectionAsyncResult.cause());
+                return ;
+            }
+            if (sqlConnectionAsyncResult.succeeded()){
+
+            }
+
+        });
 
     }
+
 
     /**
      * 删除
