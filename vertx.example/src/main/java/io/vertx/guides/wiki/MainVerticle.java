@@ -1,7 +1,6 @@
 package io.vertx.guides.wiki;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
@@ -14,6 +13,10 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 主类
@@ -86,7 +89,7 @@ public class MainVerticle extends AbstractVerticle {
                 if (executeAsyncResult.failed()) {
                     logger.error("Database preparation error", executeAsyncResult.cause());
                     promise.fail(executeAsyncResult.cause());
-                    return ;
+                    return;
                 }
                 promise.complete();
             });
@@ -117,13 +120,13 @@ public class MainVerticle extends AbstractVerticle {
 
         httpServer.requestHandler(router).listen(8080, httpServerAsyncResult -> {
 
-            if (httpServerAsyncResult.failed()){
+            if (httpServerAsyncResult.failed()) {
                 logger.error("Could not start a HTTP server", httpServerAsyncResult.cause());
                 promise.fail(httpServerAsyncResult.cause());
-                return ;
+                return;
             }
 
-            if (httpServerAsyncResult.succeeded()){
+            if (httpServerAsyncResult.succeeded()) {
                 logger.info("HTTP server running on port 8080");
                 promise.complete();
             }
@@ -134,14 +137,50 @@ public class MainVerticle extends AbstractVerticle {
 
     /**
      * 主页
+     *
      * @param context
      */
-    private void indexHandler(RoutingContext context){
-        jdbcClient.getConnection(sqlConnectionAsyncResult -> {});
+    private void indexHandler(RoutingContext context) {
+        jdbcClient.getConnection(sqlConnectionAsyncResult -> {
+            // 获取数据连接成功
+            if (sqlConnectionAsyncResult.succeeded()) {
+
+                SQLConnection connection = sqlConnectionAsyncResult.result();
+                connection.query("select value from tp_cube", queryResultAsyncResult -> {
+                    connection.close();
+
+                    if (queryResultAsyncResult.succeeded()) {
+                        ResultSet rs = (ResultSet) queryResultAsyncResult.result();
+                        try {
+                            List<String> dataList = new ArrayList<>();
+                            while (rs.next()) {
+                                String value = rs.getString("value");
+                                dataList.add(value);
+                            }
+                        } catch (Exception e) {
+                            logger.error("查询出错", e);
+                            context.fail(e);
+                        }
+
+                        
+                        return;
+                    }
+
+                    // 如果查询出错
+                    context.fail(queryResultAsyncResult.cause());
+                });
+                return;
+            }
+
+            // 如果未获取到数据库连接
+            context.fail(sqlConnectionAsyncResult.cause());
+
+        });
     }
 
     /**
      * 创建
+     *
      * @param context
      */
     private void pageCreateHandler(RoutingContext context) {
@@ -150,6 +189,7 @@ public class MainVerticle extends AbstractVerticle {
 
     /**
      * 更新
+     *
      * @param context
      */
     private void pageUpdateHandler(RoutingContext context) {
@@ -158,11 +198,11 @@ public class MainVerticle extends AbstractVerticle {
 
     /**
      * 删除
+     *
      * @param context
      */
     private void pageDeletionHandler(RoutingContext context) {
 
     }
-
 
 }
