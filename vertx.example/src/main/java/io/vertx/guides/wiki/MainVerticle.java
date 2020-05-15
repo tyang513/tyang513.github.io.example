@@ -76,11 +76,13 @@ public class MainVerticle extends AbstractVerticle {
         Promise<Void> promise = Promise.promise();
 
         JsonObject config = new JsonObject();
-        config.put("url", "jdbc:mysql://172.23.6.249:3306/yt_test??useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai");
+        config.put("url", "jdbc:mysql://172.23.6.249:3306/yt_test?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai");
         config.put("driver_class", "com.mysql.cj.jdbc.Driver");
-        config.put("max_pool_size", 30);
-        config.put("username", "rwuser");
+        config.put("user", "rwuser");
         config.put("password", "kw1ntu2p");
+        config.put("initial_pool_size", 3);
+        config.put("max_pool_size", 30);
+        config.put("max_idle_time", 1000);
 
         jdbcClient = JDBCClient.createShared(vertx, config);
 
