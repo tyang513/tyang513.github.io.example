@@ -16,10 +16,9 @@ import io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.ResultSet;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 主类
@@ -209,31 +208,20 @@ public class MainVerticle extends AbstractVerticle {
                     connection.close();
 
                     if (queryResultAsyncResult.succeeded()) {
-                        ResultSet rs = (ResultSet) queryResultAsyncResult.result();
-                        try {
-                            List<String> dataList = new ArrayList<>();
-                            while (rs.next()) {
-                                String value = rs.getString("value");
-                                dataList.add(value);
-                            }
+                        List<String> dataList = queryResultAsyncResult.result().getResults().stream().map(json -> json.getString(0)).sorted().collect(Collectors.toList());
 
-                            context.put("title", "Wiki home");
-                            context.put("pages", dataList);
-                            templateEngine.render(context.data(), "templates/index.ftl", event -> {
-                                if (event.succeeded()) {
-                                    context.response().putHeader("Content-Type", "text/html");
-                                    context.response().end(event.result());
-                                } else {
-                                    context.fail(event.cause());
-                                }
-                            });
-                        } catch (Exception e) {
-                            logger.error("查询出错", e);
-                            context.fail(e);
-                        }
+                        context.put("title", "Wiki home");
+                        context.put("pages", dataList);
+                        templateEngine.render(context.data(), "templates/index.ftl", event -> {
+                            if (event.succeeded()) {
+                                context.response().putHeader("Content-Type", "text/html");
+                                context.response().end(event.result());
+                            } else {
+                                context.fail(event.cause());
+                            }
+                        });
                         return;
                     }
-
                     // 如果查询出错
                     context.fail(queryResultAsyncResult.cause());
                 });
