@@ -25,8 +25,15 @@ import java.util.stream.Collectors;
  *
  * @author tao.yang
  * @date 2020-05-14
+ * @version v1 版本
  */
+@Deprecated
 public class MainVerticle extends AbstractVerticle {
+
+    /**
+     * 日志
+     */
+    private static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
 
     private static final String EMPTY_PAGE_MARKDOWN =
         "# A new page\n" +
@@ -38,10 +45,7 @@ public class MainVerticle extends AbstractVerticle {
     private static final String SQL_SAVE_PAGE = "update pages set content = ? where id = ?";
     private static final String SQL_ALL_PAGES = "select name from pages";
     private static final String SQL_DELETE_PAGE = "delete from pages where id = ?";
-    /**
-     * 日志
-     */
-    private static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
+
     /**
      * JDBC 客户端
      */
