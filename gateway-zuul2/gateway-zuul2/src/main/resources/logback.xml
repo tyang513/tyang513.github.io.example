@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <appender class="ch.qos.logback.core.ConsoleAppender" name="STDOUT">
+    <encoder>
+      <pattern>%d [%thread] [%X{traceId}:%X{spanId}] %-5level %logger{36}:%line - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="FILE">
+    <encoder>
+      <pattern>%d [%thread] [%X{traceId}:%X{spanId}] %-5level %logger{36}:%line - %msg%n</pattern>
+    </encoder>
+    <file>logs/gateway.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>logs/%d{yyyy-MM-dd}.stdout.log</fileNamePattern>
+      <maxHistory>15</maxHistory>o
+    </rollingPolicy>
+  </appender>
+
+  <appender class="ch.qos.logback.core.rolling.RollingFileAppender" name="ERROR">
+    <encoder>
+      <pattern>%d [%thread] [%X{traceId}:%X{spanId}] %-5level %logger{36}:%line - %msg%n</pattern>
+    </encoder>
+    <file>logs/error.log</file>
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ERROR</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>logs/error.%d{yyyy-MM-dd}.stderrout.log</fileNamePattern>
+      <maxHistory>15</maxHistory>
+    </rollingPolicy>
+  </appender>
+
+  <logger name="com.netflix.discovery" level="off"/>
+
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+    <!--<appender-ref ref="FILE"/>-->
+    <!--<appender-ref ref="ERROR"/>-->
+  </root>
+</configuration>
+
