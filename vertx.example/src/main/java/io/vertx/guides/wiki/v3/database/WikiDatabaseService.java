@@ -10,7 +10,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
 /**
@@ -20,6 +23,25 @@ import java.util.HashMap;
 @ProxyGen
 @VertxGen
 public interface WikiDatabaseService {
+
+    @GenIgnore
+    static final Logger logger = LoggerFactory.getLogger(WikiDatabaseService.class);
+
+    @GenIgnore
+    static WikiDatabaseService create(JDBCClient dbClient, HashMap<SqlQuery, String> sqlQueries, Handler<AsyncResult<WikiDatabaseService>> readyHandler) {
+        return new WikiDatabaseServiceImpl(dbClient, sqlQueries, readyHandler);
+    }
+
+    @GenIgnore
+    static WikiDatabaseService createProxy(Vertx vertx, String address) {
+        try {
+            return (WikiDatabaseService) Class.forName("io.vertx.guides.wiki.v3.database.WikiDatabaseServiceVertxEBProxy")
+                .getConstructor(Vertx.class, String.class).newInstance(vertx, address);
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+            logger.error("create proxy", e);
+        }
+        return null;
+    }
 
     @Fluent
     WikiDatabaseService fetchAllPages(Handler<AsyncResult<JsonArray>> resultHandler);
@@ -35,14 +57,4 @@ public interface WikiDatabaseService {
 
     @Fluent
     WikiDatabaseService deletePage(int id, Handler<AsyncResult<Void>> resultHandler);
-
-    @GenIgnore
-    static WikiDatabaseService create(JDBCClient dbClient, HashMap<SqlQuery, String> sqlQueries, Handler<AsyncResult<WikiDatabaseService>> readyHandler) {
-        return new WikiDatabaseServiceImpl(dbClient, sqlQueries, readyHandler);
-    }
-
-    @GenIgnore
-    static WikiDatabaseService createProxy(Vertx vertx, String address) {
-        return new WikiDatabaseServiceVertxEBProxy(vertx, address);
-    }
 }

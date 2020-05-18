@@ -5,12 +5,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.serviceproxy.ServiceBinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Properties;
 
 /**
  * @author tao.yang
@@ -18,21 +17,27 @@ import java.util.Properties;
  */
 public class WikiDatabaseVerticle extends AbstractVerticle {
 
-    public static final String CONFIG_WIKIDB_JDBC_URL = "wikidb.jdbc.url";
-    public static final String CONFIG_WIKIDB_JDBC_DRIVER_CLASS = "wikidb.jdbc.driver_class";
-    public static final String CONFIG_WIKIDB_JDBC_MAX_POOL_SIZE = "wikidb.jdbc.max_pool_size";
-    public static final String CONFIG_WIKIDB_SQL_QUERIES_RESOURCE_FILE = "wikidb.sqlqueries.resource.file";
     public static final String CONFIG_WIKIDB_QUEUE = "wikidb.queue";
+    /**
+     * 日志
+     */
+    private static final Logger logger = LoggerFactory.getLogger(WikiDatabaseVerticle.class);
 
     @Override
     public void start(Promise<Void> promise) throws Exception {
 
         HashMap<SqlQuery, String> sqlQueries = loadSqlQueries();
 
-        JDBCClient dbClient = JDBCClient.createShared(vertx, new JsonObject()
-            .put("url", config().getString(CONFIG_WIKIDB_JDBC_URL, "jdbc:hsqldb:file:db/wiki"))
-            .put("driver_class", config().getString(CONFIG_WIKIDB_JDBC_DRIVER_CLASS, "org.hsqldb.jdbcDriver"))
-            .put("max_pool_size", config().getInteger(CONFIG_WIKIDB_JDBC_MAX_POOL_SIZE, 30)));
+        JsonObject config = new JsonObject();
+        config.put("url", "jdbc:mysql://172.23.6.249:3306/yt_test?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai");
+        config.put("driver_class", "com.mysql.cj.jdbc.Driver");
+        config.put("user", "rwuser");
+        config.put("password", "kw1ntu2p");
+        config.put("initial_pool_size", 3);
+        config.put("max_pool_size", 30);
+        config.put("max_idle_time", 1000);
+
+        JDBCClient dbClient = JDBCClient.createShared(vertx, config);
 
         WikiDatabaseService.create(dbClient, sqlQueries, ready -> {
             if (ready.succeeded()) {
@@ -52,25 +57,18 @@ public class WikiDatabaseVerticle extends AbstractVerticle {
      */
     private HashMap<SqlQuery, String> loadSqlQueries() throws IOException {
 
-        String queriesFile = config().getString(CONFIG_WIKIDB_SQL_QUERIES_RESOURCE_FILE);
-        InputStream queriesInputStream;
-        if (queriesFile != null) {
-            queriesInputStream = new FileInputStream(queriesFile);
-        } else {
-            queriesInputStream = getClass().getResourceAsStream("/db-queries.properties");
-        }
-
-        Properties queriesProps = new Properties();
-        queriesProps.load(queriesInputStream);
-        queriesInputStream.close();
+        String SQL_GET_PAGE = "select id, content from pages where name = ?";
+        String SQL_CREATE_PAGE = "insert into pages values (?, ?)";
+        String SQL_SAVE_PAGE = "update pages set content = ? where id = ?";
+        String SQL_ALL_PAGES = "select name from pages";
+        String SQL_DELETE_PAGE = "delete from pages where id = ?";
 
         HashMap<SqlQuery, String> sqlQueries = new HashMap<>();
-        sqlQueries.put(SqlQuery.CREATE_PAGES_TABLE, queriesProps.getProperty("create-pages-table"));
-        sqlQueries.put(SqlQuery.ALL_PAGES, queriesProps.getProperty("all-pages"));
-        sqlQueries.put(SqlQuery.GET_PAGE, queriesProps.getProperty("get-page"));
-        sqlQueries.put(SqlQuery.CREATE_PAGE, queriesProps.getProperty("create-page"));
-        sqlQueries.put(SqlQuery.SAVE_PAGE, queriesProps.getProperty("save-page"));
-        sqlQueries.put(SqlQuery.DELETE_PAGE, queriesProps.getProperty("delete-page"));
+        sqlQueries.put(SqlQuery.ALL_PAGES, SQL_ALL_PAGES);
+        sqlQueries.put(SqlQuery.GET_PAGE, SQL_GET_PAGE);
+        sqlQueries.put(SqlQuery.CREATE_PAGE, SQL_CREATE_PAGE);
+        sqlQueries.put(SqlQuery.SAVE_PAGE, SQL_SAVE_PAGE);
+        sqlQueries.put(SqlQuery.DELETE_PAGE, SQL_DELETE_PAGE);
         return sqlQueries;
     }
 }
