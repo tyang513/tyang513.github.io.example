@@ -37,6 +37,8 @@ public class DatabaseVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
 
+        logger.info("start init db verticle ");
+
         JsonObject config = new JsonObject();
         config.put("url", "jdbc:mysql://172.23.6.249:3306/yt_test?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=true&serverTimezone=Asia/Shanghai");
         config.put("driver_class", "com.mysql.cj.jdbc.Driver");
@@ -56,6 +58,9 @@ public class DatabaseVerticle extends AbstractVerticle {
                 startPromise.fail(sqlConnectionAsyncResult.cause());
                 return;
             }
+
+            logger.info(" 执行测试 select 'x' ");
+
             // 如果获取连接成功，则执行select 'x' 语句校验是否正常
             SQLConnection connection = sqlConnectionAsyncResult.result();
             connection.execute("select 'x'", executeAsyncResult -> {
@@ -65,10 +70,15 @@ public class DatabaseVerticle extends AbstractVerticle {
                     startPromise.fail(executeAsyncResult.cause());
                     return;
                 }
+
+                logger.info("注册消费者 {}", "wikidb.queue");
+                // 注册EventBus消费 wikidb.queue 里的数据
+                vertx.eventBus().consumer("wikidb.queue", this::onMessage);
                 startPromise.complete();
             });
-
         });
+
+        logger.info("end init db verticle ");
     }
 
     /**

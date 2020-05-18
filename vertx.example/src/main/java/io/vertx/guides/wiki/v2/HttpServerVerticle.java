@@ -55,11 +55,11 @@ public class HttpServerVerticle extends AbstractVerticle {
      */
     @Override
     public void start(Promise<Void> promise) {
-        logger.info("启动 HTTP 服务");
+        logger.info("启动 HTTP verticle");
 
-        wikiDbQueue = config().getString(CONFIG_WIKIDB_QUEUE, "wikidb.queue");
-
-        logger.info("数据库操作队列为:{}", wikiDbQueue);
+//        wikiDbQueue = config().getString(CONFIG_WIKIDB_QUEUE, "wikidb.queue");
+//
+//        logger.info("数据库操作队列为:{}", wikiDbQueue);
 
         HttpServer httpServer = vertx.createHttpServer();
 
@@ -89,6 +89,7 @@ public class HttpServerVerticle extends AbstractVerticle {
                 promise.complete();
             }
         });
+
     }
 
 

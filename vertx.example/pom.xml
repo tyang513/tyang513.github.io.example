@@ -25,7 +25,7 @@
         <vertx.version>3.8.5</vertx.version>
         <junit-jupiter.version>5.4.0</junit-jupiter.version>
 
-        <main.verticle>io.vertx.guides.wiki.v1.MainVerticle</main.verticle>
+        <main.verticle>io.vertx.guides.wiki.v2.MainVerticle</main.verticle>
     </properties>
 
     <dependencyManagement>

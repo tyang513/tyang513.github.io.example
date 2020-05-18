@@ -18,30 +18,34 @@ public class MainVerticle extends AbstractVerticle {
     private static Logger logger = LoggerFactory.getLogger(MainVerticle.class);
 
     /**
-     * Stop the verticle instance.
+     * Start the verticle instance.
      * <p>
-     * Vert.x calls this method when un-deploying the instance. You do not call it yourself.
+     * Vert.x calls this method when deploying the instance. You do not call it yourself.
      * <p>
-     * A promise is passed into the method, and when un-deployment is complete the verticle should either call
+     * A promise is passed into the method, and when deployment is complete the verticle should either call
      * {@link Promise#complete} or {@link Promise#fail} the future.
      *
-     * @param stopPromise the future
+     * @param startPromise the future
      */
     @Override
-    public void stop(Promise<Void> stopPromise) throws Exception {
+    public void start(Promise<Void> startPromise) throws Exception {
+
+        logger.info("start wiki");
 
         Promise<String> dbVerticleDeployment = Promise.promise();
         vertx.deployVerticle(new DatabaseVerticle(), dbVerticleDeployment);
 
         dbVerticleDeployment.future().compose(s -> {
             Promise<String> httpVerticleDeployment = Promise.promise();
-            vertx.deployVerticle("io.vertx.guides.wiki.v2.HttpServerVerticle", new DeploymentOptions().setInstances(2), httpVerticleDeployment);
+
+            // new DeploymentOptions().setInstances(2) 如果改为2, 会同时部署2个 HttpServerVerticle,并且会启动2个http port
+            vertx.deployVerticle("io.vertx.guides.wiki.v2.HttpServerVerticle", new DeploymentOptions().setInstances(1), httpVerticleDeployment);
             return httpVerticleDeployment.future();
         }).setHandler(event -> {
             if (event.succeeded()) {
-                stopPromise.complete();
+                startPromise.complete();
             } else {
-                stopPromise.fail(event.cause());
+                startPromise.fail(event.cause());
             }
         });
     }
