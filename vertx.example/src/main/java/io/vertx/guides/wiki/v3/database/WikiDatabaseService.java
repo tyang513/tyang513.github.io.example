@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author tao.yang
@@ -57,4 +58,10 @@ public interface WikiDatabaseService {
 
     @Fluent
     WikiDatabaseService deletePage(int id, Handler<AsyncResult<Void>> resultHandler);
+
+    @Fluent
+    WikiDatabaseService fetchAllPagesData(Handler<AsyncResult<List<JsonObject>>> resultHandler);
+
+    
+
 }

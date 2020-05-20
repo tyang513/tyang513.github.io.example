@@ -6,9 +6,14 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine;
 import io.vertx.guides.wiki.v3.database.WikiDatabaseService;
@@ -16,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author tao.yang
@@ -32,6 +39,7 @@ public class HttpServerVerticle extends AbstractVerticle {
         "# A new page\n" +
             "\n" +
             "Feel-free to write in Markdown!\n";
+    WebClient webClient;
 
     private String wikiDbQueue = "wikidb.queue";
 
@@ -56,6 +64,10 @@ public class HttpServerVerticle extends AbstractVerticle {
 
         wikiDatabaseService = WikiDatabaseService.createProxy(vertx, wikiDbQueue);
 
+        webClient = WebClient.create(vertx, new WebClientOptions()
+            .setSsl(true)
+            .setUserAgent("vert-x3"));
+
         HttpServer httpServer = vertx.createHttpServer();
 
         Router router = Router.router(vertx);
@@ -66,6 +78,17 @@ public class HttpServerVerticle extends AbstractVerticle {
         router.post("/save").handler(this::pageUpdateHandler);
         router.post("/create").handler(this::pageCreateHandler);
         router.post("/delete").handler(this::pageDeletionHandler);
+        router.get("/backup").handler(this::backupHandler);
+
+        Router apiRouter = Router.router(vertx);
+        apiRouter.get("/pages").handler(this::apiRoot);
+        apiRouter.get("/pages/:id").handler(this::apiGetPage);
+        apiRouter.post().handler(BodyHandler.create());
+        apiRouter.post("/pages").handler(this::apiCreatePage);
+        apiRouter.put().handler(BodyHandler.create());
+        apiRouter.put("/pages/:id").handler(this::apiUpdatePage);
+        apiRouter.delete("/pages/:id").handler(this::apiDeletePage);
+        router.mountSubRouter("/api", apiRouter);
 
         templateEngine = FreeMarkerTemplateEngine.create(vertx);
 
@@ -86,6 +109,105 @@ public class HttpServerVerticle extends AbstractVerticle {
 
     }
 
+    private void apiRoot(RoutingContext context) {
+        wikiDatabaseService.fetchAllPagesData(reply -> {
+            JsonObject response = new JsonObject();
+            if (reply.succeeded()) {
+                List<JsonObject> pages = reply.result()
+                    .stream()
+                    .map(obj -> new JsonObject()
+                        .put("id", obj.getInteger("ID"))
+                        .put("name", obj.getString("NAME")))
+                    .collect(Collectors.toList());
+                response
+                    .put("success", true)
+                    .put("pages", pages);
+                context.response().setStatusCode(200);
+                context.response().putHeader("Content-Type", "application/json");
+                context.response().end(response.encode());
+            } else {
+                response
+                    .put("success", false)
+                    .put("error", reply.cause().getMessage());
+                context.response().setStatusCode(500);
+                context.response().putHeader("Content-Type", "application/json");
+                context.response().end(response.encode());
+            }
+        });
+    }
+
+    private void apiGetPage(RoutingContext context) {
+        logger.info("apiGetPage");
+    }
+
+    private void apiCreatePage(RoutingContext context) {
+        logger.info("apiCreatePage");
+    }
+
+    private void apiUpdatePage(RoutingContext context) {
+        logger.info("apiUpdatePage");
+    }
+
+    private void apiDeletePage(RoutingContext context) {
+        logger.info("apiDeletePage");
+    }
+
+
+    private void backupHandler(RoutingContext context) {
+
+        wikiDatabaseService.fetchAllPagesData(reply -> {
+
+            if (reply.succeeded()) {
+                JsonArray filesObject = new JsonArray();
+                JsonObject payload = new JsonObject()
+                    .put("files", filesObject)
+                    .put("language", "plaintext")
+                    .put("title", "vertx-wiki-backup")
+                    .put("public", true);
+
+                reply.result().forEach(page -> {
+                    JsonObject fileObject = new JsonObject();
+                    fileObject.put("name", page.getString("NAME"));
+                    fileObject.put("content", page.getString("CONTENT"));
+                    filesObject.add(fileObject);
+                });
+
+                webClient.post(443, "snippets.glot.io", "/snippets")
+                    .putHeader("Content-Type", "application/json").as(BodyCodec.jsonObject())
+                    .sendJsonObject(payload, asyncResult -> {
+
+                        if (asyncResult.succeeded()) {
+                            HttpResponse<JsonObject> response = asyncResult.result();
+                            if (response.statusCode() == 200) {
+                                String url = "https://glot.io/snippets/" + response.body().getString("id");
+                                context.put("backup_gist_url", url);
+                                indexHandler(context);
+                            } else {
+
+                                StringBuilder message = new StringBuilder()
+                                    .append("Could not backup the wiki: ")
+                                    .append(response.statusMessage());
+                                JsonObject body = response.body();
+                                if (body != null) {
+                                    message.append(System.getProperty("line.separator"))
+                                        .append(body.encodePrettily());
+                                }
+                                logger.error(message.toString());
+                                context.fail(502);
+
+                            }
+
+                        } else {
+                            Throwable err = asyncResult.cause();
+                            logger.error("HTTP Client error", err);
+                            context.fail(err);
+                        }
+                    });
+            } else {
+                context.fail(reply.cause());
+            }
+        });
+    }
 
     /**
      * @param context

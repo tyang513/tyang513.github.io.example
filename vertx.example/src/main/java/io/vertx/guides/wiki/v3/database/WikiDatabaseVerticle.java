@@ -58,10 +58,12 @@ public class WikiDatabaseVerticle extends AbstractVerticle {
     private HashMap<SqlQuery, String> loadSqlQueries() throws IOException {
 
         String SQL_GET_PAGE = "select id, content from pages where name = ?";
-        String SQL_CREATE_PAGE = "insert into pages values (?, ?)";
+        String SQL_CREATE_PAGE = "insert into pages values (?, 'asdf')";
         String SQL_SAVE_PAGE = "update pages set content = ? where id = ?";
         String SQL_ALL_PAGES = "select name from pages";
         String SQL_DELETE_PAGE = "delete from pages where id = ?";
+        String ALL_PAGES_DATA = "select * from pages";
+        String CREATE_PAGES_TABLE = "select 'x'";
 
         HashMap<SqlQuery, String> sqlQueries = new HashMap<>();
         sqlQueries.put(SqlQuery.ALL_PAGES, SQL_ALL_PAGES);
@@ -69,6 +71,8 @@ public class WikiDatabaseVerticle extends AbstractVerticle {
         sqlQueries.put(SqlQuery.CREATE_PAGE, SQL_CREATE_PAGE);
         sqlQueries.put(SqlQuery.SAVE_PAGE, SQL_SAVE_PAGE);
         sqlQueries.put(SqlQuery.DELETE_PAGE, SQL_DELETE_PAGE);
+        sqlQueries.put(SqlQuery.ALL_PAGES_DATA, ALL_PAGES_DATA);
+        sqlQueries.put(SqlQuery.CREATE_PAGES_TABLE, CREATE_PAGES_TABLE);
         return sqlQueries;
     }
 }
