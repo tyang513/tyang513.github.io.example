@@ -79,6 +79,11 @@
 
         <dependency>
             <groupId>io.vertx</groupId>
+            <artifactId>vertx-auth-jdbc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
             <artifactId>vertx-codegen</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -90,6 +95,19 @@
         </dependency>
 
         <!-- vert.x example  -->
+
+        <!-- http -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.31</version>
+        </dependency>
 
         <!-- vert.x test -->
         <dependency>

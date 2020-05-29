@@ -22,8 +22,7 @@
     </properties>
 
     <modules>
-        <module>
-            vertx.example
-        </module>
+<!--        <module>vertx.example</module>-->
+        <module>async-http-client-example</module>
     </modules>
 </project>

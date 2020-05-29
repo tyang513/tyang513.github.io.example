@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * @author tao.yang
  * @date 2020-05-19
  */
-@RunWith(VertxUnitRunner.class)
+//@RunWith(VertxUnitRunner.class)
 public class HttpClientTest {
 
     /**

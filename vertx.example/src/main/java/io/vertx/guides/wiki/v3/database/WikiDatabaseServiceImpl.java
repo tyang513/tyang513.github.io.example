@@ -145,5 +145,31 @@ public class WikiDatabaseServiceImpl implements WikiDatabaseService {
         });
         return this;
     }
+
+    @Override
+    public WikiDatabaseService fetchPageById(int id, Handler<AsyncResult<JsonObject>> resultHandler) {
+
+        dbClient.queryWithParams("select * from pages where id = ?", new JsonArray().add(id),  queryResult -> {
+            if (queryResult.succeeded()) {
+                if (queryResult.result().getNumRows() > 0){
+                    JsonObject result = queryResult.result().getRows().get(0);
+                    resultHandler.handle(Future.succeededFuture(new JsonObject()
+                        .put("found", true)
+                        .put("id", result.getInteger("ID"))
+                        .put("name", result.getString("NAME"))
+                        .put("content", result.getString("CONTENT"))));
+                }
+                else {
+                    // 如果未找到则返回 NULL 值
+                    resultHandler.handle(Future.succeededFuture(
+                        new JsonObject().put("found", false)));
+                }
+            } else {
+                LOGGER.error("Database query error", queryResult.cause());
+                resultHandler.handle(Future.failedFuture(queryResult.cause()));
+            }
+        });
+        return this;
+    }
 }
 

@@ -58,7 +58,7 @@ public class WikiDatabaseVerticle extends AbstractVerticle {
     private HashMap<SqlQuery, String> loadSqlQueries() throws IOException {
 
         String SQL_GET_PAGE = "select id, content from pages where name = ?";
-        String SQL_CREATE_PAGE = "insert into pages values (?, 'asdf')";
+        String SQL_CREATE_PAGE = "insert into  pages(name,content) values (?, ?)";
         String SQL_SAVE_PAGE = "update pages set content = ? where id = ?";
         String SQL_ALL_PAGES = "select name from pages";
         String SQL_DELETE_PAGE = "delete from pages where id = ?";

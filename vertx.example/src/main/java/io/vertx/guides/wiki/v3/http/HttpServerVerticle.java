@@ -20,6 +20,7 @@ import io.vertx.guides.wiki.v3.database.WikiDatabaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -138,18 +139,109 @@ public class HttpServerVerticle extends AbstractVerticle {
 
     private void apiGetPage(RoutingContext context) {
         logger.info("apiGetPage");
+
+        int id = Integer.valueOf(context.request().getParam("id"));
+        wikiDatabaseService.fetchPageById(id, reply -> {
+            JsonObject response = new JsonObject();
+            if (reply.succeeded()) {
+                JsonObject dbObject = reply.result();
+                if (dbObject.getBoolean("found")) {
+                    JsonObject payload = new JsonObject()
+                        .put("name", dbObject.getString("name"))
+                        .put("id", dbObject.getInteger("id"))
+                        .put("markdown", dbObject.getString("content"))
+                        .put("html", Processor.process(dbObject.getString("content")));
+                    response
+                        .put("success", true)
+                        .put("page", payload);
+                    context.response().setStatusCode(200);
+                } else {
+                    context.response().setStatusCode(404);
+                    response
+                        .put("success", false)
+                        .put("error", "There is no page with ID " + id);
+                }
+            } else {
+                response
+                    .put("success", false)
+                    .put("error", reply.cause().getMessage());
+                context.response().setStatusCode(500);
+            }
+            context.response().putHeader("Content-Type", "application/json");
+            context.response().end(response.encode());
+        });
+
     }
 
     private void apiCreatePage(RoutingContext context) {
         logger.info("apiCreatePage");
+
+        JsonObject page = context.getBodyAsJson();
+        if (!validateJsonPageDocument(context, page, "name", "markdown")) {
+            return;
+        }
+        wikiDatabaseService.createPage(page.getString("name"), page.getString("markdown"), reply -> {
+            if (reply.succeeded()) {
+                context.response().setStatusCode(201);
+                context.response().putHeader("Content-Type", "application/json");
+                context.response().end(new JsonObject().put("success", true).encode());
+            } else {
+                context.response().setStatusCode(500);
+                context.response().putHeader("Content-Type", "application/json");
+                context.response().end(new JsonObject()
+                    .put("success", false)
+                    .put("error", reply.cause().getMessage()).encode());
+            }
+        });
+
+    }
+
+    private boolean validateJsonPageDocument(RoutingContext context, JsonObject page, String... expectedKeys) {
+        if (!Arrays.stream(expectedKeys).allMatch(page::containsKey)) {
+            logger.error("Bad page creation JSON payload: " + page.encodePrettily() + " from " + context.request().remoteAddress());
+            context.response().setStatusCode(400);
+            context.response().putHeader("Content-Type", "application/json");
+            context.response().end(new JsonObject()
+                .put("success", false)
+                .put("error", "Bad request payload").encode());
+            return false;
+        }
+        return true;
     }
 
     private void apiUpdatePage(RoutingContext context) {
         logger.info("apiUpdatePage");
+
+        int id = Integer.valueOf(context.request().getParam("id"));
+        JsonObject page = context.getBodyAsJson();
+        if (!validateJsonPageDocument(context, page, "markdown")) {
+            return;
+        }
+        wikiDatabaseService.savePage(id, page.getString("markdown"), reply -> {
+            handleSimpleDbReply(context, reply);
+        });
+    }
+
+    private void handleSimpleDbReply(RoutingContext context, AsyncResult<Void> reply) {
+        if (reply.succeeded()) {
+            context.response().setStatusCode(200);
+            context.response().putHeader("Content-Type", "application/json");
+            context.response().end(new JsonObject().put("success", true).encode());
+        } else {
+            context.response().setStatusCode(500);
+            context.response().putHeader("Content-Type", "application/json");
+            context.response().end(new JsonObject()
+                .put("success", false)
+                .put("error", reply.cause().getMessage()).encode());
+        }
     }
 
     private void apiDeletePage(RoutingContext context) {
         logger.info("apiDeletePage");
+        int id = Integer.valueOf(context.request().getParam("id"));
+        wikiDatabaseService.deletePage(id, reply -> {
+            handleSimpleDbReply(context, reply);
+        });
     }
 
 
@@ -183,7 +275,6 @@ public class HttpServerVerticle extends AbstractVerticle {
                                 context.put("backup_gist_url", url);
                                 indexHandler(context);
                             } else {
-
                                 StringBuilder message = new StringBuilder()
                                     .append("Could not backup the wiki: ")
                                     .append(response.statusMessage());
@@ -194,7 +285,6 @@ public class HttpServerVerticle extends AbstractVerticle {
                                 }
                                 logger.error(message.toString());
                                 context.fail(502);
-
                             }
 
                         } else {
