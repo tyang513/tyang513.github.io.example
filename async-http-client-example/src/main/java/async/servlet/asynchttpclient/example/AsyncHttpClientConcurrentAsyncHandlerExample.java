@@ -1,4 +1,4 @@
-package com.github.tyang513.asynchttpclient.example;
+package async.servlet.asynchttpclient.example;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.asynchttpclient.*;

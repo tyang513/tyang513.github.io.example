@@ -25,5 +25,6 @@
 <!--        <module>vertx.example</module>-->
         <module>async-http-client-example</module>
         <module>rxjava2</module>
+        <module>async-servlet</module>
     </modules>
 </project>

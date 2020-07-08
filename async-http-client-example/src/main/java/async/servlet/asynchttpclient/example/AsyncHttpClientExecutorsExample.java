@@ -1,4 +1,4 @@
-package com.github.tyang513.asynchttpclient.example;
+package async.servlet.asynchttpclient.example;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.ListenableFuture;
