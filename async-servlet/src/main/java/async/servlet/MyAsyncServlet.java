@@ -1,7 +1,6 @@
 package async.servlet;
 
 
-
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,7 +9,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author tao.yang
@@ -19,7 +21,9 @@ import java.util.concurrent.*;
 @WebServlet(name = "MyAsyncServlet", urlPatterns = {"/async-process"}, asyncSupported = true)
 public class MyAsyncServlet extends HttpServlet {
 
-    ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(1, 2, 1000, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(10), Executors.defaultThreadFactory(),new ThreadPoolExecutor.AbortPolicy());
+    ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(1, 2, 1000,
+            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(10),
+            Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
