@@ -22,4 +22,8 @@ public abstract class AbstractAdapter {
      */
     public abstract boolean blocklist(String userId);
 
+    public abstract List<String> timeWindow(String timeWindwoId, String eventId);
+
+    public abstract boolean portrait(String userId, String portraitId);
+
 }

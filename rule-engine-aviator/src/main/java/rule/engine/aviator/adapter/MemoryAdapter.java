@@ -1,7 +1,6 @@
 package rule.engine.aviator.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javafx.application.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,11 +19,13 @@ public class MemoryAdapter extends AbstractAdapter {
 
     private String basePath = "/Users/yangtao/workspace/website.example/rule-engine-aviator/src/main/resources/";
 
-    private List<String> allowlist = null;
+    private List<String> allowlist;
 
-    private List<String> blocklist = null;
+    private List<String> blocklist;
 
+    private Map<String, List<String>> timeWindow;
 
+    private Map<String, List<String>> portraitMap;
 
     /**
      * 允许名单
@@ -69,6 +70,41 @@ public class MemoryAdapter extends AbstractAdapter {
             return true;
         }
         return blocklist.contains(userId);
+    }
+
+    /**
+     *
+     * @param timeWindwoId
+     */
+    public List<String> timeWindow(String timeWindwoId, String eventId){
+
+        if (timeWindow == null){
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                timeWindow = mapper.readValue(new File(basePath + "/timeWindow.json"), Map.class);
+            } catch (IOException e) {
+                logger.error("允许名单加载出错", e);
+            }
+        }
+        List<String> returnList =  timeWindow.get(timeWindwoId);
+        if (returnList == null){
+            return null;
+        }
+        returnList.add(eventId);
+        return returnList;
+    }
+
+    public boolean portrait(String userId, String portraitId){
+        if (portraitMap == null){
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                portraitMap = mapper.readValue(new File(basePath + "/portrait.json"), Map.class);
+            } catch (IOException e) {
+                logger.error("画像服务加载出错", e);
+            }
+        }
+        List<String> portrait = portraitMap.get(portraitId);
+        return portrait.contains(userId);
     }
 
 }
