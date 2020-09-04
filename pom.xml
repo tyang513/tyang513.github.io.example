@@ -28,5 +28,7 @@
         <module>async-servlet</module>
         <module>zerocopy</module>
         <module>algorithm</module>
+        <module>rule-engine-aviator</module>
+        <module>rule-engine-calcite</module>
     </modules>
 </project>

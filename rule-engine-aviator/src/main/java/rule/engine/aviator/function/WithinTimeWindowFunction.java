@@ -1,5 +1,6 @@
 package rule.engine.aviator.function;
 
+import com.googlecode.aviator.runtime.function.FunctionUtils;
 import com.googlecode.aviator.runtime.type.AviatorObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +20,9 @@ public class WithinTimeWindowFunction extends AbstractRuleEngineFunction {
      *
      * @param env
      * @param arg1 用户id
-     * @param arg2 数字
-     * @param arg3 时间单位
-     * @param arg4 事件类型数组
+     * @param arg2 数字 窗口大小
+     * @param arg3 时间单位 HOURS 或 MINUTES
+     * @param arg4 事件表达式
      * @return
      */
     @Override
@@ -30,9 +31,7 @@ public class WithinTimeWindowFunction extends AbstractRuleEngineFunction {
         String userId = (String) arg1.getValue(env);
         int windowSize = (int) arg2.getValue(env);
         String timeUnit = (String) arg3.getValue(env);
-        List<String> eventCodeList = (List<String>) arg4.getValue(env);
-
-
+        String eventExpression = FunctionUtils.getStringValue(arg4, env);
 
         return super.call(env, arg1, arg2, arg3, arg4);
     }
