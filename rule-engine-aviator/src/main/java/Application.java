@@ -59,7 +59,7 @@ public class Application {
 //        } catch (ParseException e) {
 //            e.printStackTrace();
 //        }
-        System.out.println(AviatorEvaluator.execute("(32 + 2) * 2"));
+        System.out.println(AviatorEvaluator.execute("23 == 5"));
     }
 
 }

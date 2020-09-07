@@ -64,6 +64,7 @@ public class EventExpressionLexer {
                 sb.append(this.peek);
                 nextChar();
             } while (Character.isDigit(this.peek));
+            logger.info("解析事件 {} {} ", sb.toString(), startIndex);
             return new EventToken(sb.toString(), startIndex);
         }
 
