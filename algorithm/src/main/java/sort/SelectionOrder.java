@@ -8,7 +8,7 @@ package sort;
 public class SelectionOrder {
 
     public static void main(String[] args) {
-        int[] sorts = {2, 3, 5, 1, 9, 4, 7, 6};
+        int[] sorts = {2, 3, 5, 1, 9, 4, 7, 6, 8};
 
         for (int i = 0; i < sorts.length; i++){
 

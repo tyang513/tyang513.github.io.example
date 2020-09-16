@@ -8,7 +8,7 @@ public class BubbleSort {
 
     public static void main(String[] args) {
         BubbleSort sort = new BubbleSort();
-        int[] sorts = {2, 3, 5, 1, 9, 4, 7, 6};
+        int[] sorts = {2, 3, 5, 1, 9, 4, 7, 6, 8};
         int[] bubble = sort.bubble(sorts);
 
         for (int i = 0; i < bubble.length; i++) {
