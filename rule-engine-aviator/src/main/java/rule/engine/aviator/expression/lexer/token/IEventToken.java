@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public interface IEventToken<T> extends Serializable {
     enum EventTokenType {
-        Event, Operator
+        Event, Operator, Char
     }
 
     T getValue(Map<String, Object> env);

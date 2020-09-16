@@ -3,7 +3,6 @@ package rule.engine.aviator.expression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rule.engine.aviator.IExpression;
 
 import java.util.Map;
 
@@ -13,6 +12,9 @@ import java.util.Map;
  */
 public class EventExpressionEvaluator {
 
+    /**
+     * 日志
+     */
     private static final Logger logger = LoggerFactory.getLogger(EventExpressionEvaluator.class);
 
     /**
@@ -34,7 +36,7 @@ public class EventExpressionEvaluator {
         return EventExpressionEvaluator.StaticHolder.INSTANCE;
     }
 
-    public static IExpression compile(final String expression) {
+    public static IEventExpression compile(final String expression) {
         return getInstance().compile(expression);
     }
 
@@ -57,6 +59,13 @@ public class EventExpressionEvaluator {
      */
     public static Object execute(final String expression, final Map<String, Object> env) {
 
-        return execute(expression, env);
+        compile(expression);
+
+        return null;
     }
+
+    public static void main(String[] args) {
+        EventExpressionEvaluator.execute("e1 || e2");
+    }
+
 }

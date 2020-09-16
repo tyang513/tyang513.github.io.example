@@ -23,12 +23,12 @@
 
     <modules>
 <!--        <module>vertx.example</module>-->
-        <module>async-http-client-example</module>
-        <module>rxjava2</module>
-        <module>async-servlet</module>
-        <module>zerocopy</module>
+<!--        <module>async-http-client-example</module>-->
+<!--        <module>rxjava2</module>-->
+<!--        <module>async-servlet</module>-->
+<!--        <module>zerocopy</module>-->
         <module>algorithm</module>
         <module>rule-engine-aviator</module>
-        <module>rule-engine-calcite</module>
+<!--        <module>rule-engine-calcite</module>-->
     </modules>
 </project>

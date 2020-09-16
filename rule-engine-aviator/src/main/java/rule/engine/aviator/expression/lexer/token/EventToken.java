@@ -6,7 +6,7 @@ import java.util.Map;
  * @author tao.yang
  * @date 2020-09-04
  */
-public class EventToken implements IEventToken {
+public class EventToken<T> implements IEventToken {
 
     private String lexeme;
 
